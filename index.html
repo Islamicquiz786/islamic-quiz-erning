@@ -3,45 +3,33 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Islamic Quiz — Registration</title>
+  <title>Islamic Quiz — Register & Verify Email</title>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
   <style>
-    body { font-family: 'Segoe UI', sans-serif; background: #f5f5f5; margin: 0; padding: 20px; }
-    .form-box { max-width: 450px; background: white; padding: 30px; margin: auto; border-radius: 10px; box-shadow: 0 0 10px #ccc; }
-    input, select, button { width: 100%; margin: 10px 0; padding: 10px; border-radius: 6px; border: 1px solid #ccc; }
-    button { background: #28a745; color: white; border: none; font-weight: bold; cursor: pointer; }
-    button:hover { background: #218838; }
+    body { font-family:'Segoe UI',sans-serif; background:#f5f5f5; margin:0; padding:20px; }
+    .form-box { max-width:450px; background:#fff; padding:30px; margin:auto; border-radius:10px;
+                box-shadow:0 0 10px #ccc; }
+    input, button { width:100%; margin:10px 0; padding:10px; border-radius:6px; border:1px solid #ccc; }
+    button { background:#28a745; color:#fff; border:none; cursor:pointer; }
+    button:hover { background:#218838; }
   </style>
 </head>
 <body>
   <div class="form-box">
-    <h2>🌙 Register / Login — Islamic Quiz</h2>
-
-    <input type="text" id="username" placeholder="Enter your name" />
-    <input type="email" id="email" placeholder="Enter your Gmail" required />
-    <button onclick="sendOTP()">Get Code</button>
-    <input type="text" id="otp" placeholder="Enter OTP (6-digit)" />
-    <input type="password" id="password" placeholder="Create password" required />
-    <input type="password" id="confirmPassword" placeholder="Confirm password" />
-    <input type="text" id="whatsapp" placeholder="Enter WhatsApp number" />
-    <select id="plan">
-      <option disabled selected>Select your plan</option>
-      <option value="1000">1000 → Daily Earning 600 PKR</option>
-      <option value="1500">1500 → Daily Earning 900 PKR</option>
-      <option value="2000">2000 → Daily Earning 1200 PKR</option>
-    </select>
-    <label>Upload payment screenshot</label>
-    <input type="file" id="payment" accept="image/*" />
-    <button onclick="submitForm()">Register</button>
+    <h2>🌙 Register / Verify — Islamic Quiz</h2>
+    <input id="username" type="text" placeholder="Enter your name" />
+    <input id="email" type="email" placeholder="Enter your Gmail" required />
+    <input id="password" type="password" placeholder="Create password" required />
+    <input id="confirmPassword" type="password" placeholder="Confirm password" required />
+    <input id="whatsapp" type="text" placeholder="Enter WhatsApp number" required />
+    <button onclick="register()">Register</button>
 
     <hr>
     <h3>Already registered? Login</h3>
-    <input type="email" id="loginEmail" placeholder="Gmail" />
-    <input type="password" id="loginPassword" placeholder="Password" />
+    <input id="loginEmail" type="email" placeholder="Gmail" />
+    <input id="loginPassword" type="password" placeholder="Password" />
     <button onclick="login()">Login</button>
 
     <p id="status"></p>
@@ -58,87 +46,63 @@
       appId: "1:521529924420:web:bb64ffcced52a02eb89511"
     };
     firebase.initializeApp(firebaseConfig);
-    emailjs.init("user_bZrMPuLbLJAKwE2nS");
 
-    let generatedOTP = "";
-    async function getIP() {
-      const res = await fetch("https://api.ipify.org?format=json");
-      const data = await res.json();
-      return data.ip;
-    }
+    function register() {
+      const uname = document.getElementById('username').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const pw = document.getElementById('password').value;
+      const cpw = document.getElementById('confirmPassword').value;
+      const whatsapp = document.getElementById('whatsapp').value.trim();
 
-    function sendOTP() {
-      const email = document.getElementById("email").value;
-      generatedOTP = Math.floor(100000 + Math.random() * 900000).toString();
-      emailjs.send("default_service", "template_otpverify", {
-        to_email: email,
-        message: `Your OTP is: ${generatedOTP}\nExpires in 2 minutes.`,
-        subject: "Islamic-quiz App OTP"
-      });
-      document.getElementById("status").innerText = "📨 OTP sent to your email.";
-      setTimeout(() => generatedOTP = "", 120000);
-    }
+      if (!uname || !email || !pw || pw !== cpw || !whatsapp) {
+        return alert('All fields are required and passwords must match.');
+      }
 
-    async function submitForm() {
-      const username = document.getElementById("username").value;
-      const email = document.getElementById("email").value;
-      const otp = document.getElementById("otp").value;
-      const password = document.getElementById("password").value;
-      const confirmPassword = document.getElementById("confirmPassword").value;
-      const whatsapp = document.getElementById("whatsapp").value;
-      const plan = document.getElementById("plan").value;
-      const paymentFile = document.getElementById("payment").files[0];
-      const ip = await getIP();
-      const device = navigator.userAgent;
-
-      if (otp !== generatedOTP) return alert("❌ Invalid OTP.");
-      if (password !== confirmPassword) return alert("❌ Passwords do not match.");
-
-      firebase.auth().createUserWithEmailAndPassword(email, password)
-      .then(() => {
-        const userId = email.replace(/\W/g, '');
-        const storageRef = firebase.storage().ref(`payments/${userId}`);
-        const uploadTask = storageRef.put(paymentFile);
-
-        uploadTask.on('state_changed', null, err => {
-          alert("❌ Payment screenshot upload failed.");
-        }, () => {
-          uploadTask.snapshot.ref.getDownloadURL().then(downloadURL => {
-            firebase.database().ref("users/" + userId).set({
-              username, email, password, whatsapp, plan,
-              payment: downloadURL,
-              approved: false,
-              ip, device
+      firebase.auth().createUserWithEmailAndPassword(email, pw)
+        .then(cred => {
+          return cred.user.sendEmailVerification()
+            .then(() => {
+              const uid = cred.user.uid;
+              firebase.database().ref('users/' + uid).set({
+                username: uname,
+                email: email,
+                whatsapp: whatsapp,
+                approved: false,
+                createdAt: Date.now()
+              });
+              document.getElementById('status').innerText =
+                '✅ Registered! Verification email sent. Check your inbox.';
+              firebase.auth().signOut();
             });
-            document.getElementById("status").innerText = "🤝 Registered! Please wait for admin approval.";
-          });
-        });
-      }).catch(err => {
-        alert("❌ Registration error: " + err.message);
-      });
+        })
+        .catch(e => alert('Registration failed: ' + e.message));
     }
 
     function login() {
-      const email = document.getElementById("loginEmail").value;
-      const password = document.getElementById("loginPassword").value;
-      firebase.auth().signInWithEmailAndPassword(email, password)
-      .then(userCredential => {
-        const userId = email.replace(/\W/g, '');
-        firebase.database().ref("users/" + userId).once("value")
-        .then(snapshot => {
-          const data = snapshot.val();
-          if (data && data.approved === true) {
-            window.location.href = "dashboard.html";
-          } else {
-            alert("⏳ Waiting for admin approval.");
+      const email = document.getElementById('loginEmail').value.trim();
+      const pw = document.getElementById('loginPassword').value;
+
+      firebase.auth().signInWithEmailAndPassword(email, pw)
+        .then(({ user }) => {
+          if (!user.emailVerified) {
+            alert('Please verify your email first.');
             firebase.auth().signOut();
+          } else {
+            firebase.database().ref('users/' + user.uid).once('value')
+              .then(snap => {
+                const data = snap.val();
+                if (data && data.approved) {
+                  window.location.href = 'dashboard.html';
+                } else {
+                  alert('⏳ Waiting for admin approval.');
+                  firebase.auth().signOut();
+                }
+              });
           }
-        });
-      })
-      .catch(error => {
-        alert("❌ Login failed: " + error.message);
-      });
+        })
+        .catch(e => alert('Login failed: ' + e.message));
     }
   </script>
 </body>
 </html>
+

@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="ur">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ڈیش بورڈ - Islamic Quiz</title>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; background: #f2fff2; color: #222; margin:0; padding:0; }
+    header { background:#0a6d2c; color:white; padding:20px; text-align:center; }
+    .container { padding:20px; }
+    .card { background:white; margin:10px 0; padding:15px; border-radius:10px; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
+    a { color:#0a6d2c; text-decoration:none; }
+    footer { text-align:center; padding:10px; background:#0a6d2c; color:white; margin-top:20px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🌙 Islamic Quiz - Your Dashboard</h1>
+  <p id="welcome"></p>
+</header>
+
+<div class="container" id="features">
+  <!-- feature cards inserted dynamically -->
+</div>
+
+<footer>© 2025 Islamic Quiz</footer>
+
+<script>
+  const firebaseConfig = {/* same config */};
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.database();
+
+  auth.onAuthStateChanged(user => {
+    if (!user) return window.location.href = 'index.html';
+
+    db.ref('users/' + user.uid).once('value')
+      .then(snap => {
+        const data = snap.val() || {};
+        if (!data.approved) {
+          alert('Your account is not approved yet. Please contact admin.');
+          auth.signOut();
+          return window.location.href = 'index.html';
+        }
+        document.getElementById('welcome').innerText = `Welcome, ${data.fullName}`;
+        const features = [
+          {title:'Your Plan', value:data.selectedPlan},
+          {title:'Earnings', value:data.totalEarning || '0'},
+          {title:'Referrals', value:data.referrals || '0'},
+          {title:'Payment Status', value:data.paymentStatus || 'pending'},
+        ];
+        let html = '';
+        features.forEach(f => {
+          html += `<div class="card"><h3>${f.title}</h3><p>${f.value}</p></div>`;
+        });
+        html += `<div class="card"><h3>🔒 Logout</h3><p><a href="#" onclick="logout()">Click to Logout</a></p></div>`;
+        document.getElementById('features').innerHTML = html;
+      });
+  });
+
+  function logout() {
+    auth.signOut().then(() => window.location.href = 'index.html');
+  }
+</script>
+</body>
+</html>

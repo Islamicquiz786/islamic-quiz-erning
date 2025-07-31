@@ -1,87 +1,51 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Islamic Quiz — Secure Login & Register</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <style>
-    body {
-      font-family: 'Poppins', sans-serif;
-      background: linear-gradient(145deg, #d3f0ff, #b8e3f6);
-      margin: 0; padding: 0;
-      display: flex; align-items: center; justify-content: center;
-      min-height: 100vh;
+    body { font-family:'Poppins', sans-serif; margin:0; padding:0;
+      background:linear-gradient(145deg,#d3f0ff,#b8e3f6); display:flex;
+      justify-content:center; align-items:center; min-height:100vh;
     }
-    .container {
-      max-width: 400px;
-      background: #fff;
-      padding: 30px;
-      border-radius: 20px;
-      box-shadow: 0 15px 25px rgba(0,0,0,0.15);
-      transition: all 0.3s ease;
+    .container { max-width:400px; background:#fff; padding:30px; border-radius:20px;
+      box-shadow:0 15px 25px rgba(0,0,0,0.15); transition:0.3s;
     }
-    .container:hover {
-      transform: translateY(-5px);
+    .container:hover { transform:translateY(-5px); }
+    h2 { text-align:center; color:#0077b6; }
+    input, button { width:100%; padding:12px; margin:10px 0; font-size:15px;
+      border-radius:10px; border:1px solid #ccc; outline:none; 
     }
-    h2 {
-      text-align: center;
-      color: #0077b6;
+    .input-wrapper { position:relative; }
+    .eye-toggle { position:absolute; top:50%; right:10px; transform:translateY(-50%);
+      cursor:pointer; 
     }
-    input, button {
-      width: 100%;
-      padding: 12px;
-      margin: 10px 0;
-      font-size: 15px;
-      border-radius: 10px;
-      border: 1px solid #ccc;
-      outline: none;
+    button { background:linear-gradient(to right,#00b4d8,#0077b6);
+      color:#fff; font-weight:bold; border:none; cursor:pointer;
+      transition:0.2s; position:relative;
     }
-    .input-wrapper {
-      position: relative;
+    button:hover { transform:scale(1.02); }
+    small { font-size:12px; color:red; margin-top:-6px; display:block; }
+    .link { text-align:center; margin-top:10px; }
+    .link span { color:#0077b6; cursor:pointer; }
+    .note { font-size:14px; text-align:center; color:#444; }
+    /* Toast */
+    #toast { visibility:hidden; min-width:250px; margin-left:-125px;
+      background-color:#333; color:#fff; text-align:center; border-radius:4px;
+      padding:16px; position:fixed; z-index:1; left:50%; bottom:30px;
+      font-size:17px;
     }
-    .eye-toggle {
-      position: absolute;
-      top: 50%;
-      right: 10px;
-      transform: translateY(-50%);
-      cursor: pointer;
-    }
-    button {
-      background: linear-gradient(to right, #00b4d8, #0077b6);
-      color: white;
-      font-weight: bold;
-      border: none;
-      cursor: pointer;
-      transition: transform 0.2s ease;
-    }
-    button:hover {
-      transform: scale(1.02);
-    }
-    small {
-      font-size: 12px;
-      color: red;
-      margin-top: -6px;
-      display: block;
-    }
-    .link {
-      text-align: center;
-      margin-top: 10px;
-    }
-    .link span {
-      color: #0077b6;
-      cursor: pointer;
-    }
-    .note {
-      font-size: 14px;
-      text-align: center;
-      color: #444;
-    }
+    #toast.show { visibility:visible; animation:fadein 0.5s, fadeout 0.5s 2.5s; }
+    @keyframes fadein { from{bottom:0;opacity:0;} to{bottom:30px;opacity:1;} }
+    @keyframes fadeout { from{bottom:30px;opacity:1;} to{bottom:0;opacity:0;} }
   </style>
 </head>
 <body>
+
+<div id="toast"></div>
 
 <div class="container" id="login-box">
   <h2>Login to Islamic Quiz</h2>
@@ -89,7 +53,7 @@
   <small id="login-email-error"></small>
   <div class="input-wrapper">
     <input type="password" id="login-password" placeholder="Enter Password">
-    <span class="eye-toggle" onclick="togglePassword('login-password')">👁️</span>
+    <span class="eye-toggle" onclick="toggle('login-password')">👁️</span>
   </div>
   <small id="login-password-error"></small>
   <button onclick="login()">Login</button>
@@ -97,7 +61,7 @@
   <div class="note" id="login-msg"></div>
 </div>
 
-<div class="container" id="register-box" style="display: none;">
+<div class="container" id="register-box" style="display:none;">
   <h2>Register for Islamic Quiz</h2>
   <input type="text" id="reg-name" placeholder="Full Name (Max 12 chars)" maxlength="12" oninput="validateName()">
   <small id="name-error"></small>
@@ -107,143 +71,138 @@
 
   <div class="input-wrapper">
     <input type="password" id="reg-password" placeholder="Password (Max 10 chars)" maxlength="10" oninput="validatePassword()">
-    <span class="eye-toggle" onclick="togglePassword('reg-password')">👁️</span>
+    <span class="eye-toggle" onclick="toggle('reg-password')">👁️</span>
   </div>
   <small id="password-error"></small>
 
-  <button onclick="sendVerification()">Send Verification Email</button>
+  <button id="btn-verify" onclick="sendVerification()">Send Verification Email</button>
 
   <input type="text" id="reg-whatsapp" placeholder="WhatsApp Number (11 digits, starts with 0)" oninput="validateWhatsapp()">
   <small id="whatsapp-error"></small>
 
-  <button onclick="submitRegister()">Submit</button>
+  <button id="btn-submit" onclick="submitRegister()" disabled>Submit</button>
   <div class="link">Already registered? <span onclick="showLogin()">Login</span></div>
   <div class="note" id="register-msg"></div>
 </div>
 
 <script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyCOTwS-H0NQmj6-jDNAlFzu4Yv81f86tTU",
-    authDomain: "islamic-quiz-fe72f.firebaseapp.com",
-    projectId: "islamic-quiz-fe72f",
-    storageBucket: "islamic-quiz-fe72f.appspot.com",
-    messagingSenderId: "523541510921",
-    appId: "1:523541510921:web:b78005ef3bc1f1a14a31d8"
-  };
-  firebase.initializeApp(firebaseConfig);
+  firebase.initializeApp({
+    apiKey:"AIzaSyCOTwS-H0NQmj6-jDNAlFzu4Yv81f86tTU",
+    authDomain:"islamic-quiz-fe72f.firebaseapp.com",
+    projectId:"islamic-quiz-fe72f",
+    storageBucket:"islamic-quiz-fe72f.appspot.com",
+    messagingSenderId:"523541510921",
+    appId:"1:523541510921:web:b78005ef3bc1f1a14a31d8"
+  });
   const auth = firebase.auth();
 
-  const togglePassword = id => {
-    const input = document.getElementById(id);
-    input.type = input.type === "password" ? "text" : "password";
-  };
+  // Toast
+  function showToast(msg) {
+    const t = document.getElementById("toast");
+    t.innerText = msg;
+    t.className = "show";
+    setTimeout(() => t.className = t.className.replace("show",""), 3000);
+  }
+
+  const toggle = id => { const i = document.getElementById(id);
+    i.type = i.type==='password'? 'text':'password'; }
 
   const showRegister = () => {
-    document.getElementById('login-box').style.display = 'none';
-    document.getElementById('register-box').style.display = 'block';
+    btnReset();
+    document.getElementById('login-box').style.display='none';
+    document.getElementById('register-box').style.display='block';
   };
 
   const showLogin = () => {
-    document.getElementById('register-box').style.display = 'none';
-    document.getElementById('login-box').style.display = 'block';
+    btnReset();
+    document.getElementById('register-box').style.display='none';
+    document.getElementById('login-box').style.display='block';
   };
 
   function validateName() {
-    const name = document.getElementById('reg-name').value;
-    document.getElementById('name-error').innerText = name.length > 12 ? "Name must be 12 characters or less." : "";
+    const v=document.getElementById('reg-name').value;
+    document.getElementById('name-error').innerText = v.length>12?"Name must be 12 chars or less":"";
   }
-
   function validateEmail() {
-    const email = document.getElementById('reg-email').value;
-    const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-    document.getElementById('email-error').innerText = email && !valid ? "Invalid Gmail format." : "";
+    const v=document.getElementById('reg-email').value;
+    const ok=/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+    document.getElementById('email-error').innerText = v&&!ok?"Invalid email format":"";
   }
-
   function validatePassword() {
-    const pwd = document.getElementById('reg-password').value;
-    document.getElementById('password-error').innerText = pwd.length > 10 ? "Password must not exceed 10 characters." : "";
+    const v=document.getElementById('reg-password').value;
+    document.getElementById('password-error').innerText = v.length>10?"Password must be max 10 chars":"";
   }
-
   function validateWhatsapp() {
-    const wa = document.getElementById('reg-whatsapp').value;
-    const valid = /^0\d{10}$/.test(wa);
-    document.getElementById('whatsapp-error').innerText = !valid ? "WhatsApp number must be 11 digits and start with 0." : "";
+    const v=document.getElementById('reg-whatsapp').value;
+    const ok = /^0\d{10}$/.test(v);
+    document.getElementById('whatsapp-error').innerText = v&&!ok?"WhatsApp must be 11 digits starting with 0":"";
   }
 
-  function sendVerification() {
+  function btnReset() {
+    document.getElementById('btn-verify').disabled = false;
+    document.getElementById('btn-submit').disabled = true;
+  }
+
+  function sendVerification(){
     const email = document.getElementById('reg-email').value;
     const password = document.getElementById('reg-password').value;
-
-    if (!email || !password) return alert("Please enter Gmail and password.");
-    if (document.getElementById('email-error').innerText || document.getElementById('password-error').innerText) {
-      return alert("Please fix input errors before sending verification.");
-    }
-
-    auth.createUserWithEmailAndPassword(email, password)
-      .then(userCred => {
-        userCred.user.sendEmailVerification();
-        alert("Verification link sent. Please check your Gmail.");
+    if(!email||!password) return showToast("Enter email & password first.");
+    if(document.getElementById('email-error').innerText||document.getElementById('password-error').innerText)
+      return showToast("Fix input errors first.");
+    auth.createUserWithEmailAndPassword(email,password)
+      .then(u => {
+        u.user.sendEmailVerification();
+        showToast("Verification email sent. Please check inbox.");
+        document.getElementById('btn-verify').disabled = true;
       })
-      .catch(err => {
-        if (err.code === "auth/email-already-in-use") {
-          alert("This Gmail is already registered. Try logging in.");
-        } else {
-          alert("Error: " + err.message);
-        }
-      });
+      .catch(e => showToast("Error: "+e.message));
   }
 
-  async function submitRegister() {
+  async function submitRegister(){
     const user = auth.currentUser;
-    if (!user) return alert("Please verify your email first.");
+    if(!user) return showToast("Please verify your email first.");
     await user.reload();
-    if (!user.emailVerified) return alert("Your email is not verified. Please check your inbox.");
+    if(!user.emailVerified) return showToast("Email not verified yet.");
 
-    const name = document.getElementById('reg-name').value;
-    const whatsapp = document.getElementById('reg-whatsapp').value;
+    const name=document.getElementById('reg-name').value;
+    const wa=document.getElementById('reg-whatsapp').value;
+    if(!name||!wa) return showToast("Complete all fields.");
+    if(document.getElementById('name-error').innerText||document.getElementById('whatsapp-error').innerText)
+      return showToast("Fix input errors before submitting.");
 
-    if (!name || !whatsapp) return alert("Please complete all fields.");
-    if (document.getElementById('name-error').innerText || document.getElementById('whatsapp-error').innerText) {
-      return alert("Fix input errors before submitting.");
-    }
-
-    document.getElementById('register-msg').innerHTML =
-      `🎉 Your account is registered!<br>
-      Please contact admin for approval.<br><br>
-      <a href="https://wa.me/923481326140" target="_blank"
-         style="background:green;color:white;padding:10px 15px;border-radius:8px;text-decoration:none;">
-         📞 Contact Admin on WhatsApp
-      </a>`;
+    showToast("Registration successful!");
+    document.getElementById('btn-submit').disabled = true;
+    document.getElementById('register-msg').innerHTML = 
+      `🎉 Your account is registered! Admin will verify soon.<br>
+       <a href="https://wa.me/923481326140" target="_blank"
+          style="background:green;color:white;padding:10px 15px;border-radius:8px;text-decoration:none;">Contact Admin on WhatsApp</a>`;
+    setTimeout(() => {
+      document.querySelector('#register-box .note').innerHTML = '';
+      document.getElementById('reg-name').value = '';
+      document.getElementById('reg-email').value = '';
+      document.getElementById('reg-password').value = '';
+      document.getElementById('reg-whatsapp').value = '';
+    }, 8000);
   }
 
-  function login() {
-    const email = document.getElementById('login-email').value;
-    const password = document.getElementById('login-password').value;
-
-    if (!email || !password) return alert("Please enter both Gmail and password.");
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return alert("Invalid Gmail format.");
-
-    auth.signInWithEmailAndPassword(email, password)
-      .then(async userCred => {
-        await userCred.user.reload();
-        if (!userCred.user.emailVerified) {
-          auth.signOut();
-          return alert("Your email is not verified. Please verify first.");
-        }
-        document.getElementById('login-msg').innerText = "✅ Login successful!";
+  function login(){
+    const email=document.getElementById('login-email').value;
+    const password=document.getElementById('login-password').value;
+    if(!email||!password) return showToast("Enter both email and password.");
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return showToast("Invalid Gmail format.");
+    auth.signInWithEmailAndPassword(email,password)
+      .then(async u => {
+        await u.user.reload();
+        if(!u.user.emailVerified){auth.signOut();return showToast("Email not verified. Please verify.");}
+        document.getElementById('login-msg').innerText="✅ Login successful!";
       })
-      .catch(err => {
-        let msg = "Login failed.";
-        if (err.code === "auth/user-not-found") {
-          msg = "This Gmail is not registered.";
-        } else if (err.code === "auth/wrong-password") {
-          msg = "Incorrect password. Please try again.";
-        } else if (err.code === "auth/invalid-login-credentials") {
-          msg = "Invalid login details. Please check your Gmail or password.";
-        } else if (err.code === "auth/too-many-requests") {
-          msg = "Too many login attempts. Please try again later.";
-        }
-        document.getElementById('login-msg').innerText = "❌ " + msg;
+      .catch(e => {
+        let m="Login failed.";
+        if(e.code==="auth/user-not-found") m="This Gmail is not registered.";
+        else if(e.code==="auth/wrong-password") m="Incorrect password.";
+        else if(e.code==="auth/invalid-login-credentials") m="Invalid credentials.";
+        else if(e.code==="auth/too-many-requests") m="Too many attempts. Try later.";
+        showToast(m);
       });
   }
 </script>

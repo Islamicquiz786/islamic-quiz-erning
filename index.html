@@ -1,49 +1,32 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ur">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Islamic Quiz — Login & Register</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet"/>
+  <title>Islamic Quiz — Secure Register/Login</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <style>
-    * {
-      box-sizing: border-box;
-    }
     body {
-      margin: 0;
-      padding: 0;
       font-family: 'Poppins', sans-serif;
       background: linear-gradient(145deg, #d3f0ff, #b8e3f6);
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      margin: 0; padding: 0;
+      display: flex; align-items: center; justify-content: center;
       min-height: 100vh;
     }
-
     .container {
-      width: 100%;
       max-width: 400px;
-      background: #ffffff;
+      width: 100%;
+      background: #fff;
       padding: 30px;
       border-radius: 20px;
-      box-shadow: 0 15px 25px rgba(0,0,0,0.15), 0 5px 10px rgba(0,0,0,0.05);
-      transition: all 0.3s ease-in-out;
+      box-shadow: 0 15px 25px rgba(0,0,0,0.15);
+      transition: all 0.3s ease;
     }
-
-    .container:hover {
-      transform: translateY(-6px);
-      box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-    }
-
-    h2 {
-      text-align: center;
-      margin-bottom: 20px;
-      color: #0077b6;
-    }
-
-    input {
+    .container:hover { transform: translateY(-5px); }
+    h2 { text-align: center; color: #0077b6; }
+    input, button {
       width: 100%;
       padding: 12px;
       margin: 10px 0;
@@ -51,74 +34,30 @@
       border-radius: 10px;
       border: 1px solid #ccc;
       outline: none;
-      transition: box-shadow 0.3s;
     }
-
-    input:focus {
-      box-shadow: 0 0 5px rgba(0,119,182,0.5);
-    }
-
-    button {
-      width: 100%;
-      padding: 12px;
-      background: linear-gradient(to right, #00b4d8, #0077b6);
-      color: #fff;
-      font-weight: bold;
-      border: none;
-      border-radius: 10px;
-      margin-top: 10px;
-      cursor: pointer;
-      transition: background 0.3s, transform 0.2s;
-    }
-
-    button:hover {
-      background: linear-gradient(to right, #0096c7, #023e8a);
-      transform: scale(1.02);
-    }
-
-    .link {
-      text-align: center;
-      margin-top: 10px;
-      font-size: 14px;
-    }
-
-    .link span {
-      color: #0077b6;
-      cursor: pointer;
-    }
-
-    .note {
-      text-align: center;
-      font-size: 14px;
-      margin-top: 10px;
-      color: #555;
-    }
-
-    .plans {
-      font-size: 14px;
-      margin-bottom: 15px;
-    }
-
-    small {
-      display: block;
-      font-size: 12px;
-      color: red;
-      margin-top: -8px;
-      margin-bottom: 5px;
-    }
-
     .input-wrapper {
       position: relative;
     }
-
-    .input-wrapper span.eye-toggle {
+    .eye-toggle {
       position: absolute;
-      right: 10px;
       top: 50%;
+      right: 10px;
       transform: translateY(-50%);
       cursor: pointer;
-      font-size: 16px;
     }
+    button {
+      background: linear-gradient(to right, #00b4d8, #0077b6);
+      color: white;
+      font-weight: bold;
+      border: none;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+    button:hover { transform: scale(1.02); }
+    small { font-size: 12px; color: red; margin-top: -6px; display: block; }
+    .link { text-align: center; margin-top: 10px; }
+    .link span { color: #0077b6; cursor: pointer; }
+    .note { font-size: 14px; text-align: center; color: #444; }
   </style>
 </head>
 <body>
@@ -126,10 +65,12 @@
 <div class="container" id="login-box">
   <h2>Login to Islamic Quiz</h2>
   <input type="email" id="login-email" placeholder="Enter Gmail">
+  <small id="login-email-error"></small>
   <div class="input-wrapper">
     <input type="password" id="login-password" placeholder="Enter Password">
     <span class="eye-toggle" onclick="togglePassword('login-password')">👁️</span>
   </div>
+  <small id="login-password-error"></small>
   <button onclick="login()">Login</button>
   <div class="link">Don't have an account? <span onclick="showRegister()">Register</span></div>
   <div class="note" id="login-msg"></div>
@@ -137,30 +78,25 @@
 
 <div class="container" id="register-box" style="display: none;">
   <h2>Register for Islamic Quiz</h2>
-  <div class="plans">
-    <strong>Plans:</strong><br>
-    1000 PKR → Daily: 600 PKR<br>
-    1500 PKR → Daily: 900 PKR<br>
-    2000 PKR → Daily: 1200 PKR
-  </div>
-  <input type="text" id="reg-name" placeholder="Enter Full Name" oninput="validateUsername()" maxlength="12">
-  <small id="username-error"></small>
+  <input type="text" id="reg-name" placeholder="Full Name (Max 12)" maxlength="12" oninput="validateName()">
+  <small id="name-error"></small>
 
-  <input type="email" id="reg-email" placeholder="Enter Gmail">
+  <input type="email" id="reg-email" placeholder="Enter Gmail" oninput="validateEmail()">
+  <small id="email-error"></small>
 
   <div class="input-wrapper">
-    <input type="password" id="reg-password" placeholder="Set Password" oninput="validatePassword()" style="padding-right: 35px;">
+    <input type="password" id="reg-password" placeholder="Password (8-9 chars)" oninput="validatePassword()">
     <span class="eye-toggle" onclick="togglePassword('reg-password')">👁️</span>
   </div>
   <small id="password-error"></small>
 
   <button onclick="sendVerification()">Send Gmail Verification Link</button>
 
-  <input type="text" id="reg-whatsapp" placeholder="Enter WhatsApp Number" oninput="validateWhatsapp()">
+  <input type="text" id="reg-whatsapp" placeholder="WhatsApp (11 digits, start with 0)" oninput="validateWhatsapp()">
   <small id="whatsapp-error"></small>
 
   <button onclick="submitRegister()">Submit</button>
-  <div class="link">Already have an account? <span onclick="showLogin()">Login</span></div>
+  <div class="link">Already registered? <span onclick="showLogin()">Login</span></div>
   <div class="note" id="register-msg"></div>
 </div>
 
@@ -176,6 +112,11 @@
   firebase.initializeApp(firebaseConfig);
   const auth = firebase.auth();
 
+  function togglePassword(id) {
+    const input = document.getElementById(id);
+    input.type = input.type === "password" ? "text" : "password";
+  }
+
   function showRegister() {
     document.getElementById('login-box').style.display = 'none';
     document.getElementById('register-box').style.display = 'block';
@@ -186,107 +127,89 @@
     document.getElementById('login-box').style.display = 'block';
   }
 
-  function togglePassword(id) {
-    const input = document.getElementById(id);
-    input.type = input.type === "password" ? "text" : "password";
+  function validateName() {
+    const name = document.getElementById('reg-name').value;
+    document.getElementById('name-error').innerText = name.length > 12 ? "⚠️ 12 حروف سے زیادہ نہیں ہونے چاہییں" : "";
+  }
+
+  function validateEmail() {
+    const email = document.getElementById('reg-email').value;
+    const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    document.getElementById('email-error').innerText = email && !valid ? "❌ غلط Gmail" : "";
   }
 
   function validatePassword() {
     const pwd = document.getElementById('reg-password').value;
-    const error = document.getElementById('password-error');
-    const digitOnly = /^\d{8,9}$/;
-    error.innerText = !digitOnly.test(pwd) ? "پاسورڈ صرف 8 یا 9 عدد (digits) پر مشتمل ہونا چاہیے۔" : "";
+    const valid = /^[A-Za-z0-9]{8,9}$/.test(pwd);
+    document.getElementById('password-error').innerText = !valid ? "❌ 8-9 حروف یا نمبر — کوئی symbol نہ ہو" : "";
   }
 
   function validateWhatsapp() {
-    const whatsapp = document.getElementById('reg-whatsapp').value;
-    const error = document.getElementById('whatsapp-error');
-    const digits = /^\d*$/;
-    error.innerText = !digits.test(whatsapp) ? "⚠️ صرف نمبر درج کریں، text یا symbols نہیں۔" : "";
-  }
-
-  function validateUsername() {
-    const name = document.getElementById('reg-name').value;
-    const error = document.getElementById('username-error');
-    error.innerText = name.length > 12 ? "⚠️ یوزر نیم 12 حروف سے زیادہ نہیں ہونا چاہیے۔" : "";
+    const wa = document.getElementById('reg-whatsapp').value;
+    const valid = /^0\d{10}$/.test(wa);
+    document.getElementById('whatsapp-error').innerText = !valid ? "📱 واٹس ایپ نمبر 11 ہندسوں پر مشتمل ہو، اور 0 سے شروع ہو" : "";
   }
 
   function sendVerification() {
     const email = document.getElementById('reg-email').value;
     const password = document.getElementById('reg-password').value;
-    const digitOnly = /^\d{8,9}$/;
 
-    if (!email || !password) {
-      alert("براہ کرم Gmail اور پاسورڈ درج کریں۔");
-      return;
-    }
-
-    if (!digitOnly.test(password)) {
-      alert("پاسورڈ 8 یا 9 عدد کا ہونا چاہیے۔");
-      return;
+    if (!email || !password) return alert("❌ Gmail اور پاسورڈ ضروری ہیں");
+    if (document.getElementById('email-error').innerText || document.getElementById('password-error').innerText) {
+      return alert("⚠️ درست معلومات درج کریں");
     }
 
     auth.createUserWithEmailAndPassword(email, password)
       .then(userCred => {
         userCred.user.sendEmailVerification();
-        alert("✅ Verification link sent to your Gmail.");
+        alert("✅ Verification link بھیج دیا گیا ہے۔ Gmail پر چیک کریں");
       })
-      .catch(error => {
-        alert("❌ " + (error.code === "auth/email-already-in-use"
-          ? "⚠️ یہ Gmail پہلے سے رجسٹرڈ ہے۔"
-          : error.message));
-      });
+      .catch(err => alert("❌ " + err.message));
   }
 
-  function submitRegister() {
+  async function submitRegister() {
+    const user = auth.currentUser;
+    if (!user) return alert("⛔ پہلے Gmail ویری فائی کریں");
+    await user.reload();
+    if (!user.emailVerified) return alert("📧 براہ کرم Gmail ویری فائی کریں");
+
     const name = document.getElementById('reg-name').value;
     const whatsapp = document.getElementById('reg-whatsapp').value;
 
-    if (!name || !whatsapp) {
-      alert("براہ کرم مکمل معلومات درج کریں۔");
-      return;
-    }
-
-    if (!/^\d+$/.test(whatsapp)) {
-      alert("⚠️ صرف واٹس ایپ نمبر درج کریں۔");
-      return;
+    if (!name || !whatsapp) return alert("⚠️ تمام فیلڈز مکمل کریں");
+    if (document.getElementById('name-error').innerText || document.getElementById('whatsapp-error').innerText) {
+      return alert("🚫 درست معلومات درج کریں");
     }
 
     document.getElementById('register-msg').innerHTML =
       `🎉 آپ کا اکاؤنٹ رجسٹر ہو چکا ہے!<br>
-      ایڈمن جلد آپ کی معلومات اور ادائیگی کی تصدیق کرے گا۔<br><br>
-      <a href="https://wa.me/923481326140" target="_blank" style="color: white; background: green; padding: 10px 15px; border-radius: 6px; text-decoration: none;">
-        📞 واٹس ایپ پر ایڈمن سے رابطہ کریں
-      </a>`;
+       ایڈمن جلد آپ کی تصدیق کرے گا۔<br><br>
+       <a href="https://wa.me/923481326140" target="_blank"
+          style="background:green;color:white;padding:10px 15px;border-radius:8px;text-decoration:none;">
+          📞 واٹس ایپ پر ایڈمن سے رابطہ کریں
+       </a>`;
   }
 
   function login() {
     const email = document.getElementById('login-email').value;
     const password = document.getElementById('login-password').value;
 
-    if (!email || !password) {
-      alert("براہ کرم Gmail اور پاسورڈ درج کریں۔");
-      return;
-    }
+    if (!email || !password) return alert("❌ Gmail اور پاسورڈ درج کریں");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return alert("❌ صحیح Gmail درج کریں");
 
     auth.signInWithEmailAndPassword(email, password)
-      .then(userCred => {
+      .then(async userCred => {
+        await userCred.user.reload();
         if (!userCred.user.emailVerified) {
           auth.signOut();
-          document.getElementById('login-msg').innerText = "⚠️ براہ کرم پہلے Gmail ویری فائی کریں!";
-        } else {
-          document.getElementById('login-msg').innerText = "✅ آپ کامیابی سے لاگ ان ہو چکے ہیں!";
+          return alert("📧 Gmail ویری فائی کریں، تب لاگ ان ہوگا");
         }
+        document.getElementById('login-msg').innerText = "✅ کامیابی سے لاگ ان ہو چکے ہیں";
       })
-      .catch(error => {
-        let msg = "❌ " + error.message;
-        if (error.code === 'auth/user-not-found') {
-          msg = "❌ یہ Gmail رجسٹرڈ نہیں ہے۔";
-        } else if (error.code === 'auth/wrong-password') {
-          msg = "❌ غلط پاسورڈ درج کیا گیا ہے!";
-        } else if (error.code === 'auth/invalid-email') {
-          msg = "❌ Gmail ایڈریس صحیح نہیں ہے!";
-        }
+      .catch(err => {
+        let msg = "❌ " + err.message;
+        if (err.code === "auth/user-not-found") msg = "❌ Gmail رجسٹر نہیں ہے";
+        else if (err.code === "auth/wrong-password") msg = "❌ غلط پاسورڈ";
         document.getElementById('login-msg').innerText = msg;
       });
   }

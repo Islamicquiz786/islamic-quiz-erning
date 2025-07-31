@@ -82,3 +82,170 @@
   </style>
 </head>
 <body>
+
+<div class="container" id="login-box">
+  <h2>Login to Islamic Quiz</h2>
+  <input type="email" id="login-email" placeholder="Enter Gmail">
+  <small id="login-email-error"></small>
+  <div class="input-wrapper">
+    <input type="password" id="login-password" placeholder="Enter Password">
+    <span class="eye-toggle" onclick="togglePassword('login-password')">👁️</span>
+  </div>
+  <small id="login-password-error"></small>
+  <button onclick="login()">Login</button>
+  <div class="link">Don't have an account? <span onclick="showRegister()">Register</span></div>
+  <div class="note" id="login-msg"></div>
+</div>
+
+<div class="container" id="register-box" style="display: none;">
+  <h2>Register for Islamic Quiz</h2>
+  <input type="text" id="reg-name" placeholder="Full Name (Max 12 chars)" maxlength="12" oninput="validateName()">
+  <small id="name-error"></small>
+
+  <input type="email" id="reg-email" placeholder="Enter Gmail" oninput="validateEmail()">
+  <small id="email-error"></small>
+
+  <div class="input-wrapper">
+    <input type="password" id="reg-password" placeholder="Password (Max 10 chars)" maxlength="10" oninput="validatePassword()">
+    <span class="eye-toggle" onclick="togglePassword('reg-password')">👁️</span>
+  </div>
+  <small id="password-error"></small>
+
+  <button onclick="sendVerification()">Send Verification Email</button>
+
+  <input type="text" id="reg-whatsapp" placeholder="WhatsApp Number (11 digits, starts with 0)" oninput="validateWhatsapp()">
+  <small id="whatsapp-error"></small>
+
+  <button onclick="submitRegister()">Submit</button>
+  <div class="link">Already registered? <span onclick="showLogin()">Login</span></div>
+  <div class="note" id="register-msg"></div>
+</div>
+
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyCOTwS-H0NQmj6-jDNAlFzu4Yv81f86tTU",
+    authDomain: "islamic-quiz-fe72f.firebaseapp.com",
+    projectId: "islamic-quiz-fe72f",
+    storageBucket: "islamic-quiz-fe72f.appspot.com",
+    messagingSenderId: "523541510921",
+    appId: "1:523541510921:web:b78005ef3bc1f1a14a31d8"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+
+  const togglePassword = id => {
+    const input = document.getElementById(id);
+    input.type = input.type === "password" ? "text" : "password";
+  };
+
+  const showRegister = () => {
+    document.getElementById('login-box').style.display = 'none';
+    document.getElementById('register-box').style.display = 'block';
+  };
+
+  const showLogin = () => {
+    document.getElementById('register-box').style.display = 'none';
+    document.getElementById('login-box').style.display = 'block';
+  };
+
+  function validateName() {
+    const name = document.getElementById('reg-name').value;
+    document.getElementById('name-error').innerText = name.length > 12 ? "Name must be 12 characters or less." : "";
+  }
+
+  function validateEmail() {
+    const email = document.getElementById('reg-email').value;
+    const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    document.getElementById('email-error').innerText = email && !valid ? "Invalid Gmail format." : "";
+  }
+
+  function validatePassword() {
+    const pwd = document.getElementById('reg-password').value;
+    document.getElementById('password-error').innerText = pwd.length > 10 ? "Password must not exceed 10 characters." : "";
+  }
+
+  function validateWhatsapp() {
+    const wa = document.getElementById('reg-whatsapp').value;
+    const valid = /^0\d{10}$/.test(wa);
+    document.getElementById('whatsapp-error').innerText = !valid ? "WhatsApp number must be 11 digits and start with 0." : "";
+  }
+
+  function sendVerification() {
+    const email = document.getElementById('reg-email').value;
+    const password = document.getElementById('reg-password').value;
+
+    if (!email || !password) return alert("Please enter Gmail and password.");
+    if (document.getElementById('email-error').innerText || document.getElementById('password-error').innerText) {
+      return alert("Please fix input errors before sending verification.");
+    }
+
+    auth.createUserWithEmailAndPassword(email, password)
+      .then(userCred => {
+        userCred.user.sendEmailVerification();
+        alert("Verification link sent. Please check your Gmail.");
+      })
+      .catch(err => {
+        if (err.code === "auth/email-already-in-use") {
+          alert("This Gmail is already registered. Try logging in.");
+        } else {
+          alert("Error: " + err.message);
+        }
+      });
+  }
+
+  async function submitRegister() {
+    const user = auth.currentUser;
+    if (!user) return alert("Please verify your email first.");
+    await user.reload();
+    if (!user.emailVerified) return alert("Your email is not verified. Please check your inbox.");
+
+    const name = document.getElementById('reg-name').value;
+    const whatsapp = document.getElementById('reg-whatsapp').value;
+
+    if (!name || !whatsapp) return alert("Please complete all fields.");
+    if (document.getElementById('name-error').innerText || document.getElementById('whatsapp-error').innerText) {
+      return alert("Fix input errors before submitting.");
+    }
+
+    document.getElementById('register-msg').innerHTML =
+      `🎉 Your account is registered!<br>
+      Please contact admin for approval.<br><br>
+      <a href="https://wa.me/923481326140" target="_blank"
+         style="background:green;color:white;padding:10px 15px;border-radius:8px;text-decoration:none;">
+         📞 Contact Admin on WhatsApp
+      </a>`;
+  }
+
+  function login() {
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+
+    if (!email || !password) return alert("Please enter both Gmail and password.");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return alert("Invalid Gmail format.");
+
+    auth.signInWithEmailAndPassword(email, password)
+      .then(async userCred => {
+        await userCred.user.reload();
+        if (!userCred.user.emailVerified) {
+          auth.signOut();
+          return alert("Your email is not verified. Please verify first.");
+        }
+        document.getElementById('login-msg').innerText = "✅ Login successful!";
+      })
+      .catch(err => {
+        let msg = "Login failed.";
+        if (err.code === "auth/user-not-found") {
+          msg = "This Gmail is not registered.";
+        } else if (err.code === "auth/wrong-password") {
+          msg = "Incorrect password. Please try again.";
+        } else if (err.code === "auth/invalid-login-credentials") {
+          msg = "Invalid login details. Please check your Gmail or password.";
+        } else if (err.code === "auth/too-many-requests") {
+          msg = "Too many login attempts. Please try again later.";
+        }
+        document.getElementById('login-msg').innerText = "❌ " + msg;
+      });
+  }
+</script>
+</body>
+</html>
